@@ -1,17 +1,22 @@
 import random
 
-
 # Initialize the board
 def create_board():
     return [[' ' for _ in range(7)] for _ in range(6)]
 
-
-# Print the board
-def print_board(board):
-    for row in board:
-        print('|' + '|'.join(row) + '|')
+# Print the board with optional highlighting of winning discs
+def print_board(board, winning_discs=None):
+    for row in range(6):
+        row_display = '|'
+        for col in range(7):
+            disc = board[row][col]
+            if winning_discs and (row, col) in winning_discs:
+                # Highlight winning discs (for example, using brackets)
+                row_display += f'[{disc}]|'
+            else:
+                row_display += f' {disc} |'
+        print(row_display)
     print(' ' + '-' * 15)
-
 
 # Drop a disc into a column
 def drop_disc(board, col, disc):
@@ -21,7 +26,6 @@ def drop_disc(board, col, disc):
             return True
     return False
 
-
 # Undo the last move
 def undo_move(board, col):
     for row in board:
@@ -29,40 +33,37 @@ def undo_move(board, col):
             row[col] = ' '
             return
 
-
-# Check for a win (horizontal, vertical, and diagonal)
+# Check for a win and return the winning discs' coordinates
 def check_win(board, disc):
     # Check horizontal
     for row in range(6):
         for col in range(4):
             if all(board[row][col + i] == disc for i in range(4)):
-                return True
+                return [(row, col + i) for i in range(4)]
 
     # Check vertical
     for col in range(7):
         for row in range(3):
             if all(board[row + i][col] == disc for i in range(4)):
-                return True
+                return [(row + i, col) for i in range(4)]
 
     # Check positive diagonal (\)
     for row in range(3):
         for col in range(4):
             if all(board[row + i][col + i] == disc for i in range(4)):
-                return True
+                return [(row + i, col + i) for i in range(4)]
 
     # Check negative diagonal (/)
     for row in range(3, 6):
         for col in range(4):
             if all(board[row - i][col + i] == disc for i in range(4)):
-                return True
+                return [(row - i, col + i) for i in range(4)]
 
-    return False
-
+    return []
 
 # Check for stalemate
 def check_stalemate(board):
     return all(board[0][col] != ' ' for col in range(7))
-
 
 # Evaluate board state
 def evaluate_board(board, disc):
@@ -84,8 +85,7 @@ def evaluate_board(board, disc):
 
     return score
 
-
-# MiniMax Algorithm with simple heuristic
+# MiniMax Algorithm with alpha-beta pruning
 def minimax(board, depth, is_maximizing, alpha, beta):
     if check_win(board, 'O'):
         return 1000
@@ -119,7 +119,6 @@ def minimax(board, depth, is_maximizing, alpha, beta):
                 break
         return min_eval
 
-
 # Compute the best move for the computer
 def compute_best_move(board):
     best_move = None
@@ -133,11 +132,9 @@ def compute_best_move(board):
             best_move = col
     return best_move
 
-
 # Find available columns
 def get_available_columns(board):
     return [col for col in range(7) if board[0][col] == ' ']
-
 
 # Main game loop
 def play_game():
@@ -157,7 +154,8 @@ def play_game():
     current_player = 'Computer' if computer_first else 'User'
 
     while not game_over:
-        print_board(board)
+        winning_discs = None
+        print_board(board, winning_discs)
 
         if current_player == 'User':
             while True:
@@ -174,7 +172,8 @@ def play_game():
                     print("Invalid input! Please enter an integer between 0 and 6.")
 
             if check_win(board, 'X'):
-                print_board(board)
+                winning_discs = check_win(board, 'X')
+                print_board(board, winning_discs)
                 print("Congratulations! You win!")
                 game_over = True
             else:
@@ -190,7 +189,8 @@ def play_game():
             drop_disc(board, col, 'O')
 
             if check_win(board, 'O'):
-                print_board(board)
+                winning_discs = check_win(board, 'O')
+                print_board(board, winning_discs)
                 print("Computer wins! Better luck next time.")
                 game_over = True
             else:
@@ -200,7 +200,6 @@ def play_game():
                     game_over = True
                 else:
                     current_player = 'User'
-
 
 if __name__ == "__main__":
     play_game()
