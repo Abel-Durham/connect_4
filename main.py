@@ -22,6 +22,14 @@ def drop_disc(board, col, disc):
     return False
 
 
+# Undo the last move
+def undo_move(board, col):
+    for row in board:
+        if row[col] != ' ':
+            row[col] = ' '
+            return
+
+
 # Check for a win (horizontal, vertical, and diagonal)
 def check_win(board, disc):
     # Check horizontal
@@ -36,16 +44,16 @@ def check_win(board, disc):
             if all(board[row + i][col] == disc for i in range(4)):
                 return True
 
-    # Check diagonal /
-    for row in range(3, 6):
-        for col in range(4):
-            if all(board[row - i][col + i] == disc for i in range(4)):
-                return True
-
-    # Check diagonal \
+    # Check positive diagonal (\)
     for row in range(3):
         for col in range(4):
             if all(board[row + i][col + i] == disc for i in range(4)):
+                return True
+
+    # Check negative diagonal (/)
+    for row in range(3, 6):
+        for col in range(4):
+            if all(board[row - i][col + i] == disc for i in range(4)):
                 return True
 
     return False
@@ -56,28 +64,79 @@ def check_stalemate(board):
     return all(board[0][col] != ' ' for col in range(7))
 
 
-# Check if a move will win
-def will_win(board, col, disc):
-    temp_board = [row[:] for row in board]
-    drop_disc(temp_board, col, disc)
-    return check_win(temp_board, disc)
+# Evaluate board state
+def evaluate_board(board, disc):
+    score = 0
+    # Evaluate horizontal and vertical lines
+    for row in range(6):
+        for col in range(4):
+            if all(board[row][col + i] == disc for i in range(4)):
+                score += 10
+            if all(board[row][col + i] == ('X' if disc == 'O' else 'X') for i in range(4)):
+                score -= 10
 
-
-# Computer move
-def computer_move(board):
-    # Check for immediate win
     for col in range(7):
-        if board[0][col] == ' ' and will_win(board, col, 'O'):
-            return col
+        for row in range(3):
+            if all(board[row + i][col] == disc for i in range(4)):
+                score += 10
+            if all(board[row + i][col] == ('X' if disc == 'O' else 'X') for i in range(4)):
+                score -= 10
 
-    # Block user win
-    for col in range(7):
-        if board[0][col] == ' ' and will_win(board, col, 'X'):
-            return col
+    return score
 
-    # Random move if no immediate win or block
-    available_columns = [col for col in range(7) if board[0][col] == ' ']
-    return random.choice(available_columns)
+
+# MiniMax Algorithm with simple heuristic
+def minimax(board, depth, is_maximizing, alpha, beta):
+    if check_win(board, 'O'):
+        return 1000
+    if check_win(board, 'X'):
+        return -1000
+    if check_stalemate(board):
+        return 0
+    if depth == 0:
+        return evaluate_board(board, 'O')
+
+    if is_maximizing:
+        max_eval = -float('inf')
+        for col in get_available_columns(board):
+            drop_disc(board, col, 'O')
+            eval = minimax(board, depth - 1, False, alpha, beta)
+            undo_move(board, col)
+            max_eval = max(max_eval, eval)
+            alpha = max(alpha, eval)
+            if beta <= alpha:
+                break
+        return max_eval
+    else:
+        min_eval = float('inf')
+        for col in get_available_columns(board):
+            drop_disc(board, col, 'X')
+            eval = minimax(board, depth - 1, True, alpha, beta)
+            undo_move(board, col)
+            min_eval = min(min_eval, eval)
+            beta = min(beta, eval)
+            if beta <= alpha:
+                break
+        return min_eval
+
+
+# Compute the best move for the computer
+def compute_best_move(board):
+    best_move = None
+    best_value = -float('inf')
+    for col in get_available_columns(board):
+        drop_disc(board, col, 'O')
+        move_value = minimax(board, 3, False, -float('inf'), float('inf'))
+        undo_move(board, col)
+        if move_value > best_value:
+            best_value = move_value
+            best_move = col
+    return best_move
+
+
+# Find available columns
+def get_available_columns(board):
+    return [col for col in range(7) if board[0][col] == ' ']
 
 
 # Main game loop
@@ -116,7 +175,7 @@ def play_game():
                     current_player = 'Computer'
 
         else:  # Computer's turn
-            col = computer_move(board)
+            col = compute_best_move(board)
             drop_disc(board, col, 'O')
 
             if check_win(board, 'O'):
@@ -134,5 +193,6 @@ def play_game():
 
 if __name__ == "__main__":
     play_game()
+
 
 
