@@ -143,7 +143,18 @@ def get_available_columns(board):
 def play_game():
     board = create_board()
     game_over = False
-    current_player = 'User'  # Start with the user
+
+    # Ask the player if the computer should go first
+    while True:
+        choice = input("Do you want the computer to go first? (yes/no): ").strip().lower()
+        if choice in ['yes', 'no']:
+            computer_first = choice == 'yes'
+            break
+        else:
+            print("Invalid choice. Please enter 'yes' or 'no'.")
+
+    # Set the starting player
+    current_player = 'Computer' if computer_first else 'User'
 
     while not game_over:
         print_board(board)
@@ -193,6 +204,7 @@ def play_game():
 
 if __name__ == "__main__":
     play_game()
+
 
 
 
