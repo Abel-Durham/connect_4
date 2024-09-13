@@ -22,7 +22,7 @@ def drop_disc(board, col, disc):
     return False
 
 
-# Check for a win (horizontal and vertical only)
+# Check for a win (horizontal, vertical, and diagonal)
 def check_win(board, disc):
     # Check horizontal
     for row in range(6):
@@ -36,6 +36,18 @@ def check_win(board, disc):
             if all(board[row + i][col] == disc for i in range(4)):
                 return True
 
+    # Check diagonal /
+    for row in range(3, 6):
+        for col in range(4):
+            if all(board[row - i][col + i] == disc for i in range(4)):
+                return True
+
+    # Check diagonal \
+    for row in range(3):
+        for col in range(4):
+            if all(board[row + i][col + i] == disc for i in range(4)):
+                return True
+
     return False
 
 
@@ -44,8 +56,26 @@ def check_stalemate(board):
     return all(board[0][col] != ' ' for col in range(7))
 
 
+# Check if a move will win
+def will_win(board, col, disc):
+    temp_board = [row[:] for row in board]
+    drop_disc(temp_board, col, disc)
+    return check_win(temp_board, disc)
+
+
 # Computer move
 def computer_move(board):
+    # Check for immediate win
+    for col in range(7):
+        if board[0][col] == ' ' and will_win(board, col, 'O'):
+            return col
+
+    # Block user win
+    for col in range(7):
+        if board[0][col] == ' ' and will_win(board, col, 'X'):
+            return col
+
+    # Random move if no immediate win or block
     available_columns = [col for col in range(7) if board[0][col] == ' ']
     return random.choice(available_columns)
 
@@ -104,4 +134,5 @@ def play_game():
 
 if __name__ == "__main__":
     play_game()
+
 
